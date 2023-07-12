@@ -1,0 +1,178 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
+class Program
+{
+    static void Main()
+    {
+        int width = 20;
+        int height = 10;
+        int score = 0;
+        int delay = 100;
+        int foodX, foodY;
+        int headX = width / 2;
+        int headY = height / 2;
+        int[] tailX = new int[100];
+        int[] tailY = new int[100];
+        int tailLength = 0;
+        bool gameOver = false;
+        ConsoleKeyInfo keyInfo;
+        Random random = new Random();
+
+        // Установка начального направления движения
+        int dirX = 1;
+        int dirY = 0;
+
+        // Отображение поля для игры
+        Console.SetWindowSize(width + 2, height + 3);
+        Console.SetBufferSize(width + 2, height + 3);
+        Console.CursorVisible = false;
+        DrawBorder(width, height);
+
+        // Генерация первой еды
+        GenerateFood(width, height, out foodX, out foodY);
+        DrawFood(foodX, foodY);
+
+        while (!gameOver)
+        {
+            if (Console.KeyAvailable)
+            {
+                keyInfo = Console.ReadKey(true);
+                switch (keyInfo.Key)
+                {
+                    case ConsoleKey.UpArrow:
+                        if (dirY != 1)
+                        {
+                            dirX = 0;
+                            dirY = -1;
+                        }
+                        break;
+                    case ConsoleKey.DownArrow:
+                        if (dirY != -1)
+                        {
+                            dirX = 0;
+                            dirY = 1;
+                        }
+                        break;
+                    case ConsoleKey.LeftArrow:
+                        if (dirX != 1)
+                        {
+                            dirX = -1;
+                            dirY = 0;
+                        }
+                        break;
+                    case ConsoleKey.RightArrow:
+                        if (dirX != -1)
+                        {
+                            dirX = 1;
+                            dirY = 0;
+                        }
+                        break;
+                }
+            }
+
+            // Обновление положения змейки
+            int prevX = tailX[0];
+            int prevY = tailY[0];
+            tailX[0] = headX;
+            tailY[0] = headY;
+            int tempX, tempY;
+            for (int i = 1; i < tailLength; i++)
+            {
+                tempX = tailX[i];
+                tempY = tailY[i];
+                tailX[i] = prevX;
+                tailY[i] = prevY;
+                prevX = tempX;
+                prevY = tempY;
+            }
+            headX += dirX;
+            headY += dirY;
+
+            // Проверка столкновений со стенами и собственным телом
+            if (headX < 1 || headX > width || headY < 1 || headY > height ||
+                tailX.Contains(headX) && tailY.Contains(headY))
+            {
+                gameOver = true;
+            }
+
+            // Проверка поедания еды
+            if (headX == foodX && headY == foodY)
+            {
+                score++;
+                tailLength++;
+                GenerateFood(width, height, out foodX, out foodY);
+                DrawFood(foodX, foodY);
+                delay = Math.Max(10, delay - 5);
+            }
+
+            // Отображение змейки
+            Console.Clear();
+            DrawBorder(width, height);
+            DrawSnake(headX, headY, tailX, tailY, tailLength);
+            DrawFood(foodX, foodY);
+            DrawScore(score);
+
+            // Задержка перед следующим обновлением
+            Thread.Sleep(delay);
+        }
+
+        // Вывод сообщения о завершении игры
+        Console.Clear();
+        Console.SetCursorPosition(width / 2 - 5, height / 2);
+        Console.WriteLine("Game Over");
+        Console.SetCursorPosition(width / 2 - 7, height / 2 + 1);
+        Console.WriteLine("Your score: " + score);
+        Console.ReadLine();
+    }
+
+    static void DrawBorder(int width, int height)
+    {
+        for (int i = 0; i <= width + 1; i++)
+        {
+            Console.SetCursorPosition(i, 0);
+            Console.Write("█");
+            Console.SetCursorPosition(i, height + 1);
+            Console.Write("█");
+        }
+        for (int i = 0; i <= height + 1; i++)
+        {
+            Console.SetCursorPosition(0, i);
+            Console.Write("█");
+            Console.SetCursorPosition(width + 1, i);
+            Console.Write("█");
+        }
+    }
+
+    static void GenerateFood(int width, int height, out int foodX, out int foodY)
+    {
+        Random random = new Random();
+        foodX = random.Next(1, width + 1);
+        foodY = random.Next(1, height + 1);
+    }
+
+    static void DrawSnake(int headX, int headY, int[] tailX, int[] tailY, int tailLength)
+    {
+        Console.SetCursorPosition(headX, headY);
+        Console.Write("■");
+        for (int i = 0; i < tailLength; i++)
+        {
+            Console.SetCursorPosition(tailX[i], tailY[i]);
+            Console.Write("■");
+        }
+    }
+
+    static void DrawFood(int foodX, int foodY)
+    {
+        Console.SetCursorPosition(foodX, foodY);
+        Console.Write("⊙");
+    }
+
+    static void DrawScore(int score)
+    {
+        Console.SetCursorPosition(0, Console.WindowHeight - 1);
+        Console.Write("Score: " + score);
+    }
+}
